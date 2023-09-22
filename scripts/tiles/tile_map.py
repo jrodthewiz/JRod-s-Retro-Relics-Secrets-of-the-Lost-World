@@ -1,3 +1,24 @@
+import pygame
+import pymunk
+from scripts.tiles import Tile
+
+# {
+#     "tiles": [
+#         {
+#             "texture_name": "grass",
+#             "is_solid": true,
+#             "x": 0,
+#             "y": 0
+#         },
+#         {
+#             "texture_name": "water",
+#             "is_solid": false,
+#             "x": 1,
+#             "y": 0
+#         }
+#     ]
+# }
+
 class TileMap:
     def __init__(self, width, height, tile_size):
         self.width = width
