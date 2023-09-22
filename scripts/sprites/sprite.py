@@ -10,7 +10,10 @@ class Sprite:
         Args:
         - texture_path (str): Path to the texture (image) for this sprite.
         """
-        self.texture = pygame.image.load(texture_path).convert_alpha()
+        if texture_path is not None:
+            self.texture = pygame.image.load(texture_path).convert_alpha()
+        else:
+            self.texture = None
         
     def render(self, screen, position):
         """Render the sprite on the screen at the given position.
@@ -19,6 +22,8 @@ class Sprite:
         - screen (pygame.Surface): The display surface to draw the sprite on.
         - position (tuple): A tuple containing the (x, y) position to draw the sprite.
         """
-        screen.blit(self.texture, position)
+
+        if self.texture is not None:
+            screen.blit(self.texture, position)
 
  

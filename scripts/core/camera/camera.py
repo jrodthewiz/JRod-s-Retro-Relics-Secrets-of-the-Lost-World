@@ -1,3 +1,4 @@
+import pygame
 class Camera:
     def __init__(self, width, height):
         self.camera = pygame.Rect(0, 0, width, height)
@@ -13,16 +14,8 @@ class Camera:
         return rect.move(self.camera.topleft)
 
     def update(self, target):
-        """ Adjust camera position based on the target (usually the player). """
-
         # Center the target in the camera view
-        x = -target.rect.centerx + int(self.width / 2)
-        y = -target.rect.centery + int(self.height / 2)
-
-        # Bound the camera to the level size
-        x = min(0, x)                            # Left
-        y = min(0, y)                            # Top
-        x = max(-(target.level.width - self.width), x)    # Right
-        y = max(-(target.level.height - self.height), y)  # Bottom
+        x = -target.body.position.x + int(self.width / 2)
+        y = target.body.position.y - int(self.height / 2)  # Here, remove the negation
 
         self.camera = pygame.Rect(x, y, self.width, self.height)

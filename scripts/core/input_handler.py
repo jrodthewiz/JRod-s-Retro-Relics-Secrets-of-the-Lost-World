@@ -15,6 +15,10 @@ class InputHandler:
             # Check for key down events
             if event.type == pygame.KEYDOWN:
                 self.key_states[event.key] = True
+
+                # Check if the key is ESC and exit if it is
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
                 
             # Check for key up events
             if event.type == pygame.KEYUP:
