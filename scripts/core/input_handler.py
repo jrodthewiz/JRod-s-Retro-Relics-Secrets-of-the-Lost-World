@@ -8,11 +8,12 @@ class InputHandler:
     def poll(self):
         """Check for input events and update the key_states dictionary."""
         for event in pygame.event.get():
-            # If the user closes the window
+
+             
             if event.type == pygame.QUIT:
                 pygame.quit()
                 
-            # Check for key down events
+             
             if event.type == pygame.KEYDOWN:
                 self.key_states[event.key] = True
 

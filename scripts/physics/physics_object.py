@@ -19,60 +19,42 @@ class PhysicsObject:
                                             default is pymunk.moment_for_box.
     """
     def __init__(self, position, shape_description, body_type=pymunk.moment_for_box):
-        # Assume a default mass of 1 for now
-        mass = 1
+        
+        mass = 10
+        moment = float('inf') 
+        self.body                 = pymunk.Body(mass, moment, body_type=pymunk.Body.DYNAMIC)
+        self.body.position        = position
+        self.body.angle           = 0  
+        self.body.moment          = moment 
 
-        # Calculate the moment of inertia based on the dimensions of a box
-        # Assuming `shape_description` is a tuple of the form (width, height)
-        width, height = shape_description
-        moment = pymunk.moment_for_box(mass, (width, height))
+        hardcoded_offset_x = 150
+        hardcoded_offset_y = 90
+        adjusted_shape_description = (
+            shape_description[0] - 2*hardcoded_offset_x,
+            shape_description[1] - 2*hardcoded_offset_y
+        )
 
-        # Create the pymunk body
-        self.body = pymunk.Body(mass, moment)
-        self.body.position = position
+        self.shape = pymunk.Poly.create_box(self.body, adjusted_shape_description)
 
-        # Create the shape based on the description
-        # For simplicity, we'll use a rectangle here.
-        self.shape = pymunk.Poly.create_box(self.body, shape_description)
-        self.shape.density = 1.0
-        self.shape.friction = 0.5
-
-        # Collision attributes
+        #self.shape                = pymunk.Poly.create_box(self.body, shape_description)
+        self.shape.density        = 2.0
+        self.shape.friction       = 1.0
+        self.shape.elasticity     = 0.0
+        self.shape.collision_type = 1 
+        
         self.colliding_left = False
         self.colliding_right = False
         self.colliding_top = False
         self.colliding_bottom = False
         self.in_air = True
+        self.bottom_collisions = 0
 
-    """
-    Adds the PhysicsObject to a pymunk space.
-    
-    Parameters:
-        - space (pymunk.Space): The pymunk space to which to add the object.
-    """
     def add_to_space(self, space):
         space.add(self.body, self.shape)
 
-    """
-    Updates the PhysicsObject. This method serves as a placeholder for now,
-    but can be overridden or extended with specific update logic if needed.
-    """
     def update(self):
-        # For now, this method can be a placeholder
-        # Pymunk will automatically update the position and rotation of the body
-        # as it interacts with other objects in the space
-        # You can include any specific update logic if needed
         pass
-
-    """
-    Sets up a collision handler for interactions between this PhysicsObject
-    and another type of physics object.
     
-    Parameters:
-        - space (pymunk.Space): The pymunk space in which the objects reside.
-        - collision_type (int): The collision type identifier for this object.
-        - other_collision_type (int): The collision type identifier for the other object.
-    """
     def set_collision_handler(self, space, collision_type, other_collision_type):
         # Define a collision handler between this object and another type
         handler = space.add_collision_handler(collision_type, other_collision_type)
@@ -81,59 +63,52 @@ class PhysicsObject:
         handler.begin = self.collision_begin
         handler.separate = self.collision_separate
 
-    """
-    Callback method called when a collision begins. Updates collision flags 
-    based on the collision normal.
-    
-    Parameters:
-        - arbiter (pymunk.Arbiter): The arbiter for the collision.
-        - space (pymunk.Space): The pymunk space in which the collision occurred.
-        - data (dict): Optional data associated with the collision.
-        
-    Returns:
-        - True to process the collision normally.
-    """
     def collision_begin(self, arbiter, space, data):
-        # This function is called when a collision begins
-        normal = arbiter.normal
+        a_shape, b_shape = arbiter.shapes
+        normal = arbiter.normal  # Get the collision normal
+            
+        right_vector = pymunk.Vec2d(1, 0).rotated(self.body.angle)
+        up_vector = pymunk.Vec2d(0, 1).rotated(self.body.angle)
 
-        # Check direction of normal to determine collision side
-        if abs(normal.x) > abs(normal.y):
-            if normal.x > 0:
+        dot_right = normal.dot(right_vector)
+        dot_up = normal.dot(up_vector)
+
+        if abs(dot_right) > abs(dot_up):
+            if dot_right > 0:
                 self.colliding_left = True
             else:
                 self.colliding_right = True
         else:
-            if normal.y > 0:
+            if dot_up > 0:
                 self.colliding_bottom = True
+                self.bottom_collisions += 1
                 self.in_air = False
             else:
                 self.colliding_top = True
 
-        return True  # Return True to process the collision normally
+        return True
 
-    """
-    Callback method called when a collision ends. Resets collision flags based 
-    on the collision normal.
-    
-    Parameters:
-        - arbiter (pymunk.Arbiter): The arbiter for the collision.
-        - space (pymunk.Space): The pymunk space in which the collision occurred.
-        - data (dict): Optional data associated with the collision.
-    """
     def collision_separate(self, arbiter, space, data):
-        # This function is called when the collision ends
-        normal = arbiter.normal
+        a_shape, b_shape = arbiter.shapes
+        normal = arbiter.normal  # Get the collision normal
+            
+        right_vector = pymunk.Vec2d(1, 0).rotated(self.body.angle)
+        up_vector = pymunk.Vec2d(0, 1).rotated(self.body.angle)
 
-        # Reset collision flags
-        if abs(normal.x) > abs(normal.y):
-            if normal.x > 0:
+        dot_right = normal.dot(right_vector)
+        dot_up = normal.dot(up_vector)
+
+        if abs(dot_right) > abs(dot_up):
+            if dot_right > 0:
                 self.colliding_left = False
             else:
                 self.colliding_right = False
         else:
-            if normal.y > 0:
+            if dot_up > 0:
                 self.colliding_bottom = False
-                self.in_air = True
+                self.bottom_collisions -= 1
+                if self.bottom_collisions <= 0:
+                    self.in_air = True
+                    self.bottom_collisions = 0  # Ensure it doesn't go negative
             else:
                 self.colliding_top = False

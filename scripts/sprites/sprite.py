@@ -15,7 +15,7 @@ class Sprite:
         else:
             self.texture = None
         
-    def render(self, screen, position):
+    def render(self, screen, position, flip):
         """Render the sprite on the screen at the given position.
 
         Args:
@@ -24,6 +24,10 @@ class Sprite:
         """
 
         if self.texture is not None:
-            screen.blit(self.texture, position)
-
- 
+            # Flip the texture horizontally if flip is True
+            texture_to_render = pygame.transform.flip(self.texture, flip, False) if flip else self.texture
+            #print("Rendering size: ", texture_to_render.get_size())
+            screen.blit(texture_to_render, position)
+            texture_rect = pygame.Rect(position, texture_to_render.get_size())
+            #pygame.draw.rect(screen, (255, 0, 0), texture_rect, 2)
+    
