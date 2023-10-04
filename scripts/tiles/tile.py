@@ -20,16 +20,16 @@ class Tile:
         self.body = pymunk.Body(mass, inertia, body_type=pymunk.Body.STATIC)
         self.body.position = (self.position[0] + self.texture.get_width() / 2, self.position[1] + self.texture.get_height() / 2)
         self.shape = pymunk.Poly.create_box(self.body, (self.texture.get_width(), self.texture.get_height()))
-        self.shape.friction = 1.0
+        self.shape.friction = 1.0  
         self.shape.elasticity = 0.0
         self.shape.collision_type = 2  # Set a common collision type or different types if you have a handler for them
         self.body.angle = 0  # This sets the angle of the body to 0
         self.body.moment = float('inf')  # This will prevent the body from rotating
         self.game.space.add(self.body, self.shape)
+        self.game.shape_to_object_map[self.shape] = self
         #print(f"Creating physics object at {self.position} with size {(self.texture.get_width(), self.texture.get_height())}")  # Debug line
 
     def render(self, screen, camera):
-
         
         adjusted_position = self.position  # This line now correctly retains the original position of the tile.
 

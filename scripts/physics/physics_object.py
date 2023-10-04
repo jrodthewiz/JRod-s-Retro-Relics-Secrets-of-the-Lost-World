@@ -1,23 +1,7 @@
 import pymunk
-
+import time
 class PhysicsObject:
-    """
-    The PhysicsObject class encapsulates a physics body and shape using the pymunk library.
-    It provides methods for adding the object to a pymunk space, updating the object, and 
-    setting up collision handling with other physics objects.
-    """
-
-
-    """
-    Initializes a new PhysicsObject with a given position, shape description,
-    and optionally a body type function to calculate the moment of inertia.
     
-    Parameters:
-        - position (tuple): The initial position of the object as a (x, y) tuple.
-        - shape_description (tuple): The dimensions of the object as a (width, height) tuple.
-        - body_type (function, optional): A function to calculate the moment of inertia, 
-                                            default is pymunk.moment_for_box.
-    """
     def __init__(self, position, shape_description, body_type=pymunk.moment_for_box):
         
         mass = 10
@@ -27,19 +11,20 @@ class PhysicsObject:
         self.body.angle           = 0  
         self.body.moment          = moment 
 
-        hardcoded_offset_x = 150
+        hardcoded_offset_x = 200
         hardcoded_offset_y = 90
         adjusted_shape_description = (
             shape_description[0] - 2*hardcoded_offset_x,
             shape_description[1] - 2*hardcoded_offset_y
         )
 
-        self.shape = pymunk.Poly.create_box(self.body, adjusted_shape_description)
 
-        #self.shape                = pymunk.Poly.create_box(self.body, shape_description)
-        self.shape.density        = 2.0
-        self.shape.friction       = 1.0
-        self.shape.elasticity     = 0.0
+        self.shape = pymunk.Poly.create_box(self.body, adjusted_shape_description)
+        self.shape.data = self
+
+        self.shape.friction = 1.0  # You could try increasing this value slightly
+        self.shape.elasticity = 0.0  # Ensure this remains at 0 to prevent bouncing
+        self.shape.density = 2.0  # You could experiment with different density values
         self.shape.collision_type = 1 
         
         self.colliding_left = False
@@ -48,18 +33,19 @@ class PhysicsObject:
         self.colliding_bottom = False
         self.in_air = True
         self.bottom_collisions = 0
+        self.last_ground_contact = time.time()  # Add this line to track the last time the player touched the ground
+        self.ground_contact_buffer = 0.2  # Duration (in seconds) before setting in_air to True
+        self.is_colliding_with_type1 = False
 
     def add_to_space(self, space):
         space.add(self.body, self.shape)
+        
 
     def update(self):
         pass
     
     def set_collision_handler(self, space, collision_type, other_collision_type):
-        # Define a collision handler between this object and another type
         handler = space.add_collision_handler(collision_type, other_collision_type)
-
-        # Set callback functions
         handler.begin = self.collision_begin
         handler.separate = self.collision_separate
 
@@ -83,8 +69,27 @@ class PhysicsObject:
                 self.colliding_bottom = True
                 self.bottom_collisions += 1
                 self.in_air = False
+                self.jumps_made = 0  # Reset the jumps when on the ground
+                self.last_ground_contact = time.time()
             else:
                 self.colliding_top = True
+
+
+        # character_a = self.game.shape_to_object_map.get(a_shape)
+        # character_b = self.game.shape_to_object_map.get(b_shape)
+
+        # print(type(character_a))
+        # print(type(character_b))
+
+
+        # if b_shape.collision_type == 2:
+        #     print("started to collide with collision_type ", 2)
+        #     self.is_colliding_with_type1 = True
+            
+        #     # Adjust the position of the object to overlap by the overlap_distance
+        #     overlap_vector = normal * 1.0
+        #     self.body.position += overlap_vector
+
 
         return True
 
@@ -108,7 +113,12 @@ class PhysicsObject:
                 self.colliding_bottom = False
                 self.bottom_collisions -= 1
                 if self.bottom_collisions <= 0:
-                    self.in_air = True
+                    if time.time() - self.last_ground_contact >= self.ground_contact_buffer:
+                        self.in_air = True
                     self.bottom_collisions = 0  # Ensure it doesn't go negative
             else:
                 self.colliding_top = False
+
+        if b_shape.collision_type == 2:
+            self.is_colliding_with_type1 = False
+            print("ending our collision with collision_type ", 2)

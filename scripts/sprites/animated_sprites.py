@@ -4,20 +4,14 @@ import os as os
 class AnimatedSprite(Sprite):
     def __init__(self, texture_manager):
         self.texture_manager = texture_manager
-        self.animations = {}  # Dictionary to hold animations
+        self.animations = {}  
         self.current_animation = None
         self.current_frame = 0
         self.last_update = pygame.time.get_ticks()
         self.frame_duration = 40
         self.playing = False
         self.one_shot_playing = False
-        super().__init__(None)  # No initial texture
-
-    def switch_animation(self, animation_name):
-        # Only switch if the new animation is different from the current one
-        if animation_name != self.current_animation and animation_name in self.animations:
-            self.set_animation(animation_name)
-
+        super().__init__(None)  
 
     def add_animation(self, animation_name, frame_duration=40, loop=True):
         animation_frames = self.texture_manager.get_animation(animation_name)
@@ -28,23 +22,27 @@ class AnimatedSprite(Sprite):
                 'loop': loop
             }
 
-
     def set_animation(self, animation_name):
         if animation_name in self.animations:
             is_one_shot = not self.animations[animation_name]['loop']
-            if self.current_animation != animation_name or (is_one_shot and not self.one_shot_playing):
+            # Only change the animation if it's different from the current one
+            if self.current_animation != animation_name:
+                # Don't interrupt a playing one-shot animation
+                if self.one_shot_playing:
+                    return
+
                 self.current_animation = animation_name
-                self.current_frame = 0  # Reset to the first frame of the new animation
+                self.current_frame = 0
                 self.playing = True
-                self.one_shot_playing = is_one_shot  # Set flag if it's a one-shot animation
+                self.one_shot_playing = is_one_shot
 
-
-
-
-
+        
 
     def play_animation(self):
-        if self.current_animation and self.playing:
+        if not self.playing:
+            return
+
+        if self.current_animation:
             now = pygame.time.get_ticks()
             elapsed_time = now - self.last_update
             frame_duration = self.animations[self.current_animation]['frame_duration']
@@ -58,17 +56,24 @@ class AnimatedSprite(Sprite):
                     else:
                         self.playing = False
                         self.one_shot_playing = False
+                        if not self.playing and self.current_animation in ["jump", "sword_jump", "pistol_jump"]:
+                            self.jump_animation_playing = False
                 else:
                     self.current_frame += 1
 
-                # Set the texture for the Sprite class to render
                 self.texture = self.animations[self.current_animation]['frames'][self.current_frame]
+                
 
+        # Handle one-shot animations
+        if self.one_shot_playing and not self.playing:
+            # Transition to the appropriate movement or idle state
+            if self.was_moving:
+                self.set_state_animation("move_right" if self.flip else "move_left", True)
+            else:
+                self.set_state_animation("idle", False)
+            self.one_shot_playing = False
 
-
-
-
+        
     def render(self, screen, position, flip):
-        # Update the current frame before rendering
         self.play_animation()
         super().render(screen, position, flip)
